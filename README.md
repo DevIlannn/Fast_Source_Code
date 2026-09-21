@@ -25,7 +25,7 @@ project/
 ```
 
 ## Additional Modules
-```env.example
+```env
 PORT=3000
 CORS_ORIGIN=true
 SESSION_SECRET=KEY_SECRET_IN_HERE
