@@ -1,7 +1,8 @@
-## Fast Source Code
+### Fast Source Code
 Backend service ringkas berbasis Express.js dengan arsitektur modular, dirancang untuk deployment serverless di Vercel maupun mode development lokal. Struktur project memisahkan concern secara jelas: server.js menangani inisialisasi aplikasi, session management, dan static file serving, sementara db.js mengelola koneksi PostgreSQL melalui connection pooling menggunakan library pg. Kompatibel dengan provider database seperti Neon dengan konfigurasi SSL otomatis. Sistem menerapkan session based authentication dengan cookie httpOnly untuk keamanan, CORS policy yang dapat dikonfigurasi, serta pemisahan mode production dan development yang eksplisit. Struktur folder mengikuti best practice separation of concern antara API layer, database layer, dan static assets, cocok untuk aplikasi web skala menengah yang membutuhkan performa stabil dan maintainability tinggi.
 
-## Documentation
+### Documentation
+
 ```
 project/
 ├── src/
@@ -24,8 +25,8 @@ project/
 └── LICENSE
 ```
 
-## Additional Modules
-```env
+### Additional Modules
+```env.example
 PORT=3000
 CORS_ORIGIN=true
 SESSION_SECRET=KEY_SECRET_IN_HERE
