@@ -115,7 +115,8 @@ coverage/
 }
 ```
 
-### SOURCE CODE PSQL :
+### SOURCE CODE PSQL
+*server.js*
 ```server.js
 import express from "express";
 import { consola } from "consola";
@@ -125,7 +126,14 @@ import ora from "ora";
 import apiRouter from "./api.js";
 import authRouter from "./auth.js";
 import pool, { cekKoneksiDatabase } from "./db.js";
-import { isProduction, port, publicFile, setupMiddleware, setupRoutes, setupErrorHandlers } from "./utils.js";
+import { 
+    isProduction, 
+    port, 
+    publicFile, 
+    setupMiddleware, 
+    setupRoutes, 
+    setupErrorHandlers 
+} from "./utils.js";
 
 const app = express();
 setupMiddleware(app, pool);
@@ -192,6 +200,8 @@ startServer().catch((error) => {
 
 export default app;
 ```
+
+*db.js*
 ```db.js
 import pg from "pg";
 import dotenv from "dotenv";
@@ -254,6 +264,8 @@ export async function tutupKoneksiDatabase() {
 
 export default pool;
 ```
+
+*api.js*
 ```api.js
 import { Router } from "express";
 import { z } from "zod";
@@ -324,6 +336,8 @@ export function bungkusPaginasi(rows, totalData, halaman, batas) {
     };
 }
 ```
+
+*auth.js*
 ```auth.js
 import bcrypt from "bcryptjs";
 
