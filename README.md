@@ -119,9 +119,9 @@ coverage/
 ```server.js
 import express from "express";
 import { consola } from "consola";
-import ora from "ora";
-import boxen from "boxen";
 import Table from "cli-table3";
+import boxen from "boxen";
+import ora from "ora";
 import apiRouter from "./api.js";
 import authRouter from "./auth.js";
 import pool, { cekKoneksiDatabase } from "./db.js";
@@ -201,7 +201,7 @@ const { Pool } = pg;
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: Number(process.env.DATABASE_POOL_MAX),
+    max: 10,
     ssl: process.env.DATABASE_SSL === "true" ? { rejectUnauthorized: false } : false,
 });
 
@@ -253,4 +253,137 @@ export async function tutupKoneksiDatabase() {
 }
 
 export default pool;
+```
+```api.js
+import { Router } from "express";
+import { z } from "zod";
+
+export function buatRouterApi() {
+    return Router();
+}
+
+export function tanganiAsync(handler) {
+    return (req, res, next) => {
+        Promise.resolve(handler(req, res, next)).catch(next);
+    };
+}
+
+export function kirimSukses(res, data, statusCode = 200) {
+    return res.status(statusCode).json({ sukses: true, data });
+}
+
+export function kirimGagal(res, pesan, statusCode = 400, detail = null) {
+    const body = { sukses: false, error: pesan };
+    if (detail) body.detail = detail;
+    return res.status(statusCode).json(body);
+}
+
+export function validasiBody(schema) {
+    return (req, res, next) => {
+        const hasil = schema.safeParse(req.body);
+        if (!hasil.success) {
+            return kirimGagal(res, "Validasi input gagal", 422, hasil.error.flatten().fieldErrors);
+        }
+        req.body = hasil.data;
+        next();
+    };
+}
+
+export function validasiQuery(schema) {
+    return (req, res, next) => {
+        const hasil = schema.safeParse(req.query);
+        if (!hasil.success) {
+            return kirimGagal(res, "Validasi query gagal", 422, hasil.error.flatten().fieldErrors);
+        }
+        req.query = hasil.data;
+        next();
+    };
+}
+
+export const skemaPaginasi = z.object({
+    halaman: z.coerce.number().int().positive().default(1),
+    batas: z.coerce.number().int().positive().max(100).default(20),
+});
+
+export function ambilOffsetPaginasi(query) {
+    const halaman = query.halaman ?? 1;
+    const batas = query.batas ?? 20;
+    const offset = (halaman - 1) * batas;
+    return { halaman, batas, offset };
+}
+
+export function bungkusPaginasi(rows, totalData, halaman, batas) {
+    return {
+        items: rows,
+        paginasi: {
+            halaman,
+            batas,
+            totalData,
+            totalHalaman: Math.ceil(totalData / batas),
+        },
+    };
+}
+```
+```auth.js
+import bcrypt from "bcryptjs";
+
+const SALT_ROUNDS = 12;
+
+export async function hashPassword(passwordMentah) {
+    return bcrypt.hash(passwordMentah, SALT_ROUNDS);
+}
+
+export async function verifyPassword(passwordMentah, passwordHash) {
+    return bcrypt.compare(passwordMentah, passwordHash);
+}
+
+export function createSessionUser(req, dataUser) {
+    req.session.user = dataUser;
+    return new Promise((resolve, reject) => {
+        req.session.save((error) => {
+            if (error) reject(error);
+            else resolve(dataUser);
+        });
+    });
+}
+
+export function destroySession(req) {
+    return new Promise((resolve, reject) => {
+        req.session.destroy((error) => {
+            if (error) reject(error);
+            else resolve();
+        });
+    });
+}
+
+export function getSessionUser(req) {
+    return req.session.user ?? null;
+}
+
+export function requireAuth(req, res, next) {
+    if (!req.session.user) {
+        return res.status(401).json({ error: "Sesi tidak ditemukan atau sudah berakhir" });
+    }
+    next();
+}
+
+export function requireRole(...rolesDiizinkan) {
+    return (req, res, next) => {
+        const user = req.session.user;
+        if (!user) {
+            return res.status(401).json({ error: "Sesi tidak ditemukan atau sudah berakhir" });
+        }
+        if (!rolesDiizinkan.includes(user.role)) {
+            return res.status(403).json({ error: "Tidak memiliki akses untuk resource ini" });
+        }
+        next();
+    };
+}
+
+export function requireGuest(req, res, next) {
+    if (req.session.user) {
+        return res.status(409).json({ error: "Sesi aktif sudah ada" });
+    }
+    next();
+}
 ```
